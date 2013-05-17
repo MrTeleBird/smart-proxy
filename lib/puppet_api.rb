@@ -9,6 +9,17 @@ class SmartProxy
     end
   end
 
+  post "/puppet/runSingle" do
+    hosts = params[:nodes]
+    class2deploy  = params[:tag]
+    begin
+       log_halt 400, "Failed puppet run: No nodes defined" unless hosts
+       log_halt 500, "Failed puppet run: Check Log files" unless Proxy::Puppet.runSingle class2deploy, hosts
+    rescue => e
+       log_halt 500, "Failed puppet run: #{e}"
+    end
+  end
+
   get "/puppet/environments" do
     content_type :json
     begin
