@@ -6,23 +6,41 @@ module Proxy::Puppet
       # Search in /opt/ for puppet enterprise users
       default_path = ["/usr/sbin", "/usr/bin", "/opt/puppet/bin"]
       # search for puppet for users using puppet 2.6+
-      puppetrun    = which("puppetrun", default_path) || which("puppet", default_path)
-      sudo         = which("sudo", "/usr/bin")
+      cmd = []
+      cmd.push(which("sudo", "/usr/bin"))
+      cmd.push(which("puppetrun", default_path) || which("puppet", default_path))
 
-      unless puppetrun and sudo
+      if cmd.include?(false)
         logger.warn "sudo or puppetrun binary was not found - aborting"
         return false
       end
 
       # Append kick to the puppet command if we are not using the old puppetca command
-      puppetrun << " kick" unless puppetrun.include?('puppetrun')
+      cmd.push("kick") if cmd.any? { |part| part.end_with?('puppet') }
+      shell_command(cmd + (shell_escaped_nodes.map {|n| ["--host", n] }).flatten)
+    end
 
-      command = %x[#{sudo} #{puppetrun} --host #{nodes.join(" --host ")}]
-      unless command =~ /finished with exit code 0/
-        logger.warn command
+   # def runSingle class2deploy, *hosts
+   # def runSingle class2deploy
+    def runSingle 
+      # Search in /opt/ for puppet enterprise users
+      default_path = ["/usr/sbin", "/usr/bin", "/opt/puppet/bin"]
+      # search for puppet for users using puppet 2.6+
+      cmd = []
+      cmd.push(which("sudo", "/usr/bin"))
+      cmd.push(which("puppetrun", default_path) || which("puppet", default_path))
+
+      if cmd.include?(false)
+        logger.warn "sudo or puppetrun binary was not found - aborting"
         return false
       end
-      return true
+
+      # Append kick to the puppet command if we are not using the old puppetca command
+       cmd.push("kick") if cmd.any? { |part| part.end_with?('puppet') }
+       shell_command(cmd + (shell_escaped_nodes.map {|n| ["--host", n + " --tag #{tag}"] }).flatten)
+       #shell_command(cmd + (shell_escaped_nodes.map {|n| ["--host", n + " --tag"] }).flatten)
+      # shell_command(cmd + (shell_escaped_nodes.map {|n| ["--host", n] }).flatten)
     end
+
   end
 end

@@ -25,6 +25,19 @@ class SmartProxy
     end
   end
 
+  post "/puppet/runSingle" do
+    nodes = params[:nodes]
+    tag = params[:tag]
+    begin
+      log_halt 400, "Failed puppet run: No nodes defined" unless nodes
+      log_halt 500, "Failed puppet run: Check Log files" unless puppet_setup(:nodes => [nodes].flatten, :tag => [tag]).runSingle
+      #log_halt 500, "Failed puppet run: Check Log files" unless puppet_setup(:nodes => [nodes].flatten).runSingle
+    rescue => e
+      log_halt 500, "Failed puppet run: #{e}"
+    end
+  end
+
+
   get "/puppet/environments" do
     content_type :json
     begin
